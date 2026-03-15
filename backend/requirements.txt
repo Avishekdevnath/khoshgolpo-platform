@@ -6,3 +6,4 @@ openai==1.108.1
 PyJWT==2.10.1
 loguru==0.7.2
 slowapi==0.1.9
+APScheduler==3.10.4
