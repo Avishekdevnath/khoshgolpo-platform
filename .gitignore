@@ -46,6 +46,9 @@ frontend/coverage/
 **/out/
 **/coverage/
 
+# Local artifacts
+output/
+
 # Logs
 *.log
 npm-debug.log*
