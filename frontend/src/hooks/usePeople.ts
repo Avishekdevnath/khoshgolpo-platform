@@ -33,14 +33,25 @@ export function usePeopleSearch(options: UsePeopleSearchOptions) {
   const normalizedQuery = query.trim();
   const enabled = isAuthenticated() && normalizedQuery.length > 0;
 
+  type PeopleSearchKey = readonly [
+    "people-search",
+    string,
+    PeopleSearchSort,
+    PeopleRelationshipFilter,
+    number,
+    number,
+  ];
+
   const state = useSWRInfinite<PeopleSearchResponse>(
     (index, previousPageData) => {
       if (!enabled) return null;
       if (previousPageData && previousPageData.data.length === 0) return null;
       return ["people-search", normalizedQuery, sort, relationship, index + 1, limit] as const;
     },
-    ([, currentQuery, currentSort, currentRelationship, page, pageLimit]) =>
-      searchPeople(currentQuery, page, pageLimit, currentSort, currentRelationship),
+    (key) => {
+      const [, currentQuery, currentSort, currentRelationship, page, pageLimit] = key as PeopleSearchKey;
+      return searchPeople(currentQuery, page, pageLimit, currentSort, currentRelationship);
+    },
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
@@ -73,13 +84,18 @@ export function usePeopleExplore(options: UsePeopleExploreOptions) {
   const { isAuthenticated } = useAuthStore();
   const enabled = isAuthenticated();
 
+  type PeopleExploreKey = readonly ["people-explore", PeopleExploreSort, number, number];
+
   const state = useSWRInfinite<PeopleExploreResponse>(
     (index, previousPageData) => {
       if (!enabled) return null;
       if (previousPageData && previousPageData.ranked.data.length === 0) return null;
       return ["people-explore", sort, index + 1, limit] as const;
     },
-    ([, currentSort, page, pageLimit]) => getPeopleExplore(page, pageLimit, currentSort),
+    (key) => {
+      const [, currentSort, page, pageLimit] = key as PeopleExploreKey;
+      return getPeopleExplore(page, pageLimit, currentSort);
+    },
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,

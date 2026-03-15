@@ -65,11 +65,6 @@ function SectionBlock({ title, subtitle, items, onRelationshipChange }: SectionB
 export default function PeopleExploreWorkspace() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
-  if (!mounted || (isLoading && ranked.length === 0 && sections.length === 0)) {
-    return <PageLoader />;
-  }
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<PeopleExploreSort>("social");
   const [pageCount, setPageCount] = useState(1);
@@ -77,13 +72,17 @@ export default function PeopleExploreWorkspace() {
     sort,
     pageCount,
   });
-
   const sectionMap = useMemo(() => {
     return sections.reduce<Record<string, PeopleExploreSection>>((acc, section) => {
       acc[section.key] = section;
       return acc;
     }, {});
   }, [sections]);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || (isLoading && ranked.length === 0 && sections.length === 0)) {
+    return <PageLoader />;
+  }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

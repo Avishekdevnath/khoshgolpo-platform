@@ -32,7 +32,7 @@ import RichText from "@/components/shared/RichText";
 import TopicPickerBanner from "@/components/threads/TopicPickerBanner";
 import UserHoverCard from "@/components/shared/UserHoverCard";
 import WorkspaceShell from "@/components/app/WorkspaceShell";
-import type { SortMode } from "@/types/feed";
+import type { FeedItem, SortMode } from "@/types/feed";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,8 +66,8 @@ type ThreadListResponse = {
   total: number;
 };
 
-type FeedListResponse = {
-  data: ThreadOut[];
+type FollowingFeedListResponse = {
+  data: FeedItem[];
   limit: number;
   next_cursor: string | null;
   mode: "home" | "following";
@@ -157,6 +157,19 @@ function uniqueByThreadId(items: ThreadOut[]): ThreadOut[] {
     unique.push(item);
   }
   return unique;
+}
+
+function toThreadOut(item: FeedItem): ThreadOut {
+  return {
+    ...item,
+    like_count: 0,
+    liked_by_me: false,
+    author_is_bot: false,
+  };
+}
+
+function toThreadOutList(items: FeedItem[]): ThreadOut[] {
+  return items.map(toThreadOut);
 }
 
 // ─── Skeleton card ────────────────────────────────────────────────────────────
@@ -1713,15 +1726,18 @@ export default function ThreadsWorkspace() {
     }
     if (tabKey === "MyFeed") {
       const res = await getMyFeed(sortMode, { limit: PAGE_SIZE });
-      return { threads: res.data as ThreadOut[], total: res.data.length, nextCursor: res.next_cursor, page: 1 };
+      const threads = toThreadOutList(res.data);
+      return { threads, total: threads.length, nextCursor: res.next_cursor, page: 1 };
     }
     if (tabKey === "Explore") {
       const res = await getExploreFeed(sortMode, { limit: PAGE_SIZE });
-      return { threads: res.data as ThreadOut[], total: res.data.length, nextCursor: res.next_cursor, page: 1 };
+      const threads = toThreadOutList(res.data);
+      return { threads, total: threads.length, nextCursor: res.next_cursor, page: 1 };
     }
     // Following
-    const res = await apiGet<FeedListResponse>(`feed/following?limit=${PAGE_SIZE}`);
-    return { threads: res.data as ThreadOut[], total: res.data.length, nextCursor: res.next_cursor, page: 1 };
+    const res = await apiGet<FollowingFeedListResponse>(`feed/following?limit=${PAGE_SIZE}`);
+    const threads = toThreadOutList(res.data);
+    return { threads, total: threads.length, nextCursor: res.next_cursor, page: 1 };
   }
 
   async function loadFirstPage(tabKey: TabKey) {
@@ -1803,16 +1819,16 @@ export default function ThreadsWorkspace() {
       let nextCursor: string | null;
       if (tab === "MyFeed") {
         const res = await getMyFeed(sortMode, { cursor: current.nextCursor, limit: PAGE_SIZE });
-        nextThreads = res.data as ThreadOut[];
+        nextThreads = toThreadOutList(res.data);
         nextCursor = res.next_cursor;
       } else if (tab === "Explore") {
         const res = await getExploreFeed(sortMode, { cursor: current.nextCursor, limit: PAGE_SIZE });
-        nextThreads = res.data as ThreadOut[];
+        nextThreads = toThreadOutList(res.data);
         nextCursor = res.next_cursor;
       } else {
         const cursorParam = encodeURIComponent(current.nextCursor);
-        const res = await apiGet<FeedListResponse>(`feed/following?limit=${PAGE_SIZE}&cursor=${cursorParam}`);
-        nextThreads = res.data as ThreadOut[];
+        const res = await apiGet<FollowingFeedListResponse>(`feed/following?limit=${PAGE_SIZE}&cursor=${cursorParam}`);
+        nextThreads = toThreadOutList(res.data);
         nextCursor = res.next_cursor;
       }
       if (requestVersion !== queryVersionRef.current[tab]) return;
