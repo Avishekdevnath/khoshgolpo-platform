@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: khoshgolpo-api
+    runtime: docker
+    # Dockerfile is inside backend/, so context is backend/
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      # Set the following in the Render dashboard → Environment tab:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: khoshgolpo
+      - key: JWT_SECRET_KEY
+        generateValue: false   # paste a long random secret in dashboard
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false            # set to your Vercel URL, e.g. https://khoshgolpo.vercel.app
+      - key: AI_MODEL
+        value: gpt-4o-mini
+      - key: AI_WARNING_THRESHOLD
+        value: "0.6"
+      - key: AI_FLAG_THRESHOLD
+        value: "0.8"
+      - key: AUTH_MODE
+        value: jwt
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
